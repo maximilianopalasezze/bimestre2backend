@@ -28,11 +28,11 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         Rol rolCliente = crearRolSiNoExiste("ROLE_CLIENTE");
         Rol rolEmpleado = crearRolSiNoExiste("ROLE_EMPLEADO");
-        Rol rolGerente = crearRolSiNoExiste("ROLE_GERENTE");
+        Rol rolAdmin = crearRolSiNoExiste("ROLE_ADMIN");
 
         crearUsuarioSiNoExiste("cliente", "Cliente123", Set.of(rolCliente));
         crearUsuarioSiNoExiste("empleado", "Empleado123", Set.of(rolEmpleado));
-        crearUsuarioSiNoExiste("gerente", "Gerente123", Set.of(rolGerente));
+        crearUsuarioSiNoExiste("admin", "Admin123", Set.of(rolAdmin));
     }
 
     private Rol crearRolSiNoExiste(String nombreRol) {
