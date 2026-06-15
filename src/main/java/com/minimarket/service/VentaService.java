@@ -9,4 +9,7 @@ public interface VentaService {
     Venta findById(Long id);
     Venta save(Venta venta);
     List<Venta> findByUsuarioId(Long usuarioId);
+
+    Venta registrarVenta(Venta venta);
+    Double calcularTotal(Venta venta);
 }

@@ -4,7 +4,6 @@ import com.minimarket.entity.Categoria;
 import com.minimarket.service.CategoriaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,26 +15,22 @@ public class CategoriaController {
     @Autowired
     private CategoriaService categoriaService;
 
-    @PreAuthorize("hasAnyRole('CLIENTE', 'EMPLEADO', 'ADMIN')")
     @GetMapping
     public List<Categoria> listarCategorias() {
         return categoriaService.findAll();
     }
 
-    @PreAuthorize("hasAnyRole('CLIENTE', 'EMPLEADO', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<Categoria> obtenerCategoriaPorId(@PathVariable Long id) {
         Categoria categoria = categoriaService.findById(id);
         return (categoria != null) ? ResponseEntity.ok(categoria) : ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasAnyRole('EMPLEADO', 'ADMIN')")
     @PostMapping
     public Categoria guardarCategoria(@RequestBody Categoria categoria) {
         return categoriaService.save(categoria);
     }
 
-    @PreAuthorize("hasAnyRole('EMPLEADO', 'ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<Categoria> actualizarCategoria(@PathVariable Long id, @RequestBody Categoria categoria) {
         Categoria categoriaExistente = categoriaService.findById(id);
@@ -46,7 +41,6 @@ public class CategoriaController {
         return ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasAnyRole('EMPLEADO', 'ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarCategoria(@PathVariable Long id) {
         Categoria categoria = categoriaService.findById(id);

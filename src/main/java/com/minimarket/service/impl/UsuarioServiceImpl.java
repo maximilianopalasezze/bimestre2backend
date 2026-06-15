@@ -1,10 +1,10 @@
 package com.minimarket.service.impl;
 
+import com.minimarket.entity.Rol;
 import com.minimarket.entity.Usuario;
 import com.minimarket.repository.UsuarioRepository;
 import com.minimarket.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,9 +15,6 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
     @Override
     public List<Usuario> findAll() {
@@ -36,14 +33,57 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public Usuario save(Usuario usuario) {
-        if (usuario.getPassword() != null && !usuario.getPassword().startsWith("$2a$")) {
-            usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+        if (!tieneDatosObligatoriosCompletos(usuario)) {
+            throw new IllegalArgumentException("El usuario debe tener nombre, apellido, email y direccion.");
         }
+
+        if (!tieneRolValido(usuario)) {
+            throw new IllegalArgumentException("El usuario debe tener al menos un rol valido.");
+        }
+
         return usuarioRepository.save(usuario);
     }
 
     @Override
     public void deleteById(Long id) {
         usuarioRepository.deleteById(id);
+    }
+
+    @Override
+    public boolean tieneDatosObligatoriosCompletos(Usuario usuario) {
+        return usuario != null
+                && textoValido(usuario.getNombre())
+                && textoValido(usuario.getApellido())
+                && textoValido(usuario.getEmail())
+                && textoValido(usuario.getDireccion());
+    }
+
+    @Override
+    public boolean tieneRolValido(Usuario usuario) {
+        if (usuario == null || usuario.getRoles() == null || usuario.getRoles().isEmpty()) {
+            return false;
+        }
+
+        return usuario.getRoles().stream()
+                .map(Rol::getNombre)
+                .anyMatch(rol -> rol.equalsIgnoreCase("ADMIN")
+                        || rol.equalsIgnoreCase("VENDEDOR")
+                        || rol.equalsIgnoreCase("USER"));
+    }
+
+    @Override
+    public boolean puedeRegistrarVentas(Usuario usuario) {
+        if (usuario == null || usuario.getRoles() == null || usuario.getRoles().isEmpty()) {
+            return false;
+        }
+
+        return usuario.getRoles().stream()
+                .map(Rol::getNombre)
+                .anyMatch(rol -> rol.equalsIgnoreCase("ADMIN")
+                        || rol.equalsIgnoreCase("VENDEDOR"));
+    }
+
+    private boolean textoValido(String texto) {
+        return texto != null && !texto.trim().isEmpty();
     }
 }

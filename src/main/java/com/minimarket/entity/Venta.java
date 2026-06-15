@@ -17,10 +17,12 @@ public class Venta {
     @Column(nullable = false)
     private Date fecha;
 
+    @Column(nullable = false)
+    private Double total;
+
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL)
     private List<DetalleVenta> detalles;
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }
@@ -43,6 +45,14 @@ public class Venta {
 
     public void setFecha(Date fecha) {
         this.fecha = fecha;
+    }
+
+    public Double getTotal() {
+        return total;
+    }
+
+    public void setTotal(Double total) {
+        this.total = total;
     }
 
     public List<DetalleVenta> getDetalles() {

@@ -1,11 +1,9 @@
 package com.minimarket.controller;
 
-import com.minimarket.dto.UsuarioResponseDTO;
 import com.minimarket.entity.Usuario;
 import com.minimarket.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,43 +16,33 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public List<UsuarioResponseDTO> listarUsuarios() {
-        return usuarioService.findAll()
-                .stream()
-                .map(this::convertirAUsuarioResponseDTO)
-                .toList();
+    public List<Usuario> listarUsuarios() {
+        return usuarioService.findAll();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioResponseDTO> obtenerUsuarioPorId(@PathVariable Long id) {
+    public ResponseEntity<Usuario> obtenerUsuarioPorId(@PathVariable Long id) {
         Optional<Usuario> usuario = usuarioService.findById(id);
-        return usuario.map(value -> ResponseEntity.ok(convertirAUsuarioResponseDTO(value)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return usuario.map(ResponseEntity::ok) // Si el usuario existe, devuelve 200 OK con el usuario
+                .orElseGet(() -> ResponseEntity.notFound().build()); // Si no, devuelve 404
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public UsuarioResponseDTO guardarUsuario(@RequestBody Usuario usuario) {
-        Usuario usuarioGuardado = usuarioService.save(usuario);
-        return convertirAUsuarioResponseDTO(usuarioGuardado);
+    public Usuario guardarUsuario(@RequestBody Usuario usuario) {
+        return usuarioService.save(usuario);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioResponseDTO> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuario) {
+    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuario) {
         Optional<Usuario> usuarioExistente = usuarioService.findById(id);
         if (usuarioExistente.isPresent()) {
             usuario.setId(id);
-            Usuario usuarioActualizado = usuarioService.save(usuario);
-            return ResponseEntity.ok(convertirAUsuarioResponseDTO(usuarioActualizado));
+            return ResponseEntity.ok(usuarioService.save(usuario));
         }
         return ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarUsuario(@PathVariable Long id) {
         Optional<Usuario> usuario = usuarioService.findById(id);
@@ -64,17 +52,4 @@ public class UsuarioController {
         }
         return ResponseEntity.notFound().build(); // Respuesta 404 (no encontrado)
     }
-    private UsuarioResponseDTO convertirAUsuarioResponseDTO(Usuario usuario) {
-        List<String> roles = usuario.getRoles()
-                .stream()
-                .map(rol -> rol.getNombre())
-                .toList();
-
-        return new UsuarioResponseDTO(
-                usuario.getId(),
-                usuario.getUsername(),
-                roles
-        );
-    }
-
 }
