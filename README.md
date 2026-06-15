@@ -132,7 +132,7 @@ El proyecto fue configurado con JaCoCo para medir la cobertura de las clases pri
 
 
 
-La cobertura obtenida fue superior al 80%, cumpliendo con el requisito solicitado para las funcionalidades relacionadas con usuarios y ventas.
+La cobertura obtenida fue superior al 80%, 
 
 
 
@@ -158,13 +158,6 @@ BUILD SUCCESS
 
 ```
 
-
-
-\## Autor
-
-
-
-Trabajo desarrollado para la asignatura Desarrollo Backend II, Semana 4.
 
 
 
