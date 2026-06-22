@@ -11,9 +11,4 @@ public interface UsuarioService {
     Optional<Usuario> findByUsername(String username);
     Usuario save(Usuario usuario);
     void deleteById(Long id);
-    
-boolean tieneDatosObligatoriosCompletos(Usuario usuario);
-boolean tieneRolValido(Usuario usuario);
-boolean puedeRegistrarVentas(Usuario usuario);
-
 }
