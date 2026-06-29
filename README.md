@@ -1,12 +1,12 @@
-# Minimarket Plus – Semana 6: Seguridad y Pruebas Unitarias
+# Minimarket Plus – Semana 6: Seguridad, DTOs y Pruebas Unitarias
 
-Proyecto desarrollado en Spring Boot para aplicar autenticación, autorización por roles y pruebas unitarias en los módulos de Producto, Inventario, Venta y Usuario del sistema Minimarket Plus.
+Backend desarrollado con Spring Boot para aplicar autenticación, autorización por roles, DTOs y pruebas automatizadas en las áreas críticas del sistema Minimarket Plus.
 
-## Objetivo
+## Objetivo del proyecto
 
-El objetivo de esta actividad es proteger las operaciones críticas del backend mediante reglas de acceso según el rol del usuario y validar su funcionamiento con pruebas automatizadas.
+El objetivo de esta implementación es proteger las operaciones sensibles del backend y comprobar su correcto funcionamiento mediante pruebas unitarias y pruebas de seguridad.
 
-Las principales áreas protegidas son:
+Las áreas trabajadas son:
 
 * Gestión de productos.
 * Movimientos de inventario.
@@ -31,49 +31,74 @@ Las principales áreas protegidas son:
 
 ## Seguridad implementada
 
-La autenticación se implementó mediante HTTP Basic Authentication y las contraseñas se almacenan codificadas con BCrypt.
+La autenticación se realiza mediante HTTP Basic Authentication y las contraseñas se codifican con BCrypt antes de almacenarse.
 
-Los roles utilizados en el sistema son:
+Los roles considerados por el sistema son:
 
 * `ADMIN`
 * `CAJERO`
 * `CLIENTE`
 
-Spring Security transforma estos roles en autoridades con el prefijo requerido:
+Los usuarios no autenticados reciben código HTTP `401 Unauthorized`.
 
-* `ROLE_ADMIN`
-* `ROLE_CAJERO`
-* `ROLE_CLIENTE`
+Los usuarios autenticados que no poseen el permiso requerido reciben código HTTP `403 Forbidden`.
 
 ## Roles y permisos
 
-| Recurso              | Operación                                | Rol autorizado               |
-| -------------------- | ---------------------------------------- | ---------------------------- |
-| `/api/productos/**`  | Crear, actualizar y eliminar productos   | `ADMIN`                      |
-| `/api/productos/**`  | Consultar productos                      | `ADMIN`, `CAJERO`, `CLIENTE` |
-| `/api/inventario/**` | Registrar, editar o eliminar movimientos | `ADMIN`                      |
-| `/api/inventario/**` | Consultar movimientos                    | `ADMIN`, `CAJERO`            |
-| `/api/ventas/**`     | Generar ventas                           | `CAJERO`                     |
-| `/api/ventas/**`     | Consultar ventas                         | `ADMIN`, `CAJERO`            |
-| `/api/usuarios/**`   | Gestionar usuarios                       | `ADMIN`                      |
-| `/api/carrito/**`    | Operaciones del carrito                  | `ADMIN`, `CAJERO`, `CLIENTE` |
+| Recurso              | Operación                                | Rol autorizado                                  |
+| -------------------- | ---------------------------------------- | ----------------------------------------------- |
+| `/api/productos/**`  | Crear, actualizar y eliminar productos   | `ADMIN`                                         |
+| `/api/productos/**`  | Consultar productos                      | Usuarios autenticados según reglas de seguridad |
+| `/api/inventario/**` | Registrar, editar o eliminar movimientos | `ADMIN`                                         |
+| `/api/inventario/**` | Consultar movimientos                    | Usuarios autorizados                            |
+| `/api/ventas/**`     | Generar ventas                           | `CAJERO`                                        |
+| `/api/ventas/**`     | Consultar ventas                         | Usuarios autorizados                            |
+| `/api/usuarios/**`   | Gestionar usuarios                       | `ADMIN`                                         |
 
-Los usuarios sin autenticación reciben código HTTP `401 Unauthorized`.
-Los usuarios autenticados sin permisos suficientes reciben código HTTP `403 Forbidden`.
+## Implementación de DTOs
+
+Como mejora de arquitectura, el módulo de Producto utiliza DTOs para evitar que el controlador exponga o reciba directamente la entidad `Producto`.
+
+Se implementaron los siguientes DTOs:
+
+| DTO                   | Propósito                                                                                  |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| `ProductoRequestDTO`  | Representa los datos recibidos al crear o actualizar un producto.                          |
+| `ProductoResponseDTO` | Representa los datos que el backend devuelve al consultar, crear o actualizar un producto. |
+
+`ProductoRequestDTO` recibe:
+
+* Nombre.
+* Precio.
+* Stock.
+* Identificador de categoría.
+
+`ProductoResponseDTO` entrega:
+
+* Identificador del producto.
+* Nombre.
+* Precio.
+* Stock.
+* Identificador de categoría.
+* Nombre de categoría.
+
+Este enfoque reduce el acoplamiento entre la API y las entidades de persistencia, además de permitir controlar qué información entra y sale del sistema.
 
 ## Validaciones de negocio
 
 ### Producto
 
 * Solo un administrador puede crear, modificar o eliminar productos.
-* Se prueban listado, búsqueda por identificador, búsqueda inexistente, guardado, eliminación y consulta por categoría.
+* Se valida la categoría indicada antes de guardar o actualizar un producto.
+* Se prueban listado, búsqueda existente, búsqueda inexistente, guardado, eliminación y consulta por categoría.
+* El controlador utiliza `ProductoRequestDTO` y `ProductoResponseDTO`.
 
 ### Inventario
 
 * Solo se permiten movimientos de tipo `ENTRADA` o `SALIDA`.
 * La cantidad del movimiento debe ser positiva.
 * Todo movimiento debe estar asociado a un producto.
-* Una salida no puede ser mayor al stock disponible.
+* Una salida no puede superar el stock disponible.
 * Las entradas aumentan el stock y las salidas lo disminuyen.
 
 ### Venta
@@ -83,8 +108,8 @@ Los usuarios autenticados sin permisos suficientes reciben código HTTP `403 For
 * Cada detalle debe tener una cantidad positiva y un producto asociado.
 * Se valida que exista stock suficiente antes de confirmar la venta.
 * El stock se descuenta al registrar una venta válida.
-* Se guarda el precio vigente del producto en cada detalle de venta.
-* Se valida el stock acumulado cuando un mismo producto aparece más de una vez en una venta.
+* Se conserva el precio vigente del producto en cada detalle.
+* Se valida el stock acumulado cuando un producto aparece más de una vez en una venta.
 
 ### Usuario
 
@@ -95,7 +120,7 @@ Los usuarios autenticados sin permisos suficientes reciben código HTTP `403 For
 
 ## Pruebas implementadas
 
-La versión final cuenta con **33 pruebas automatizadas**, ejecutadas correctamente mediante Maven.
+La versión actual cuenta con **33 pruebas automatizadas**, ejecutadas correctamente mediante Maven.
 
 ### Seguridad de endpoints
 
@@ -136,31 +161,7 @@ La versión final cuenta con **33 pruebas automatizadas**, ejecutadas correctame
 * Codificación BCrypt.
 * Rechazo de contraseña vacía.
 
-## Cobertura obtenida
-
-La ejecución final de JaCoCo entregó los siguientes resultados:
-
-| Indicador                            |            Resultado |
-| ------------------------------------ | -------------------: |
-| Pruebas ejecutadas                   |                   33 |
-| Fallos                               |                    0 |
-| Errores                              |                    0 |
-| Pruebas omitidas                     |                    0 |
-| Cobertura global de instrucciones    |                  61% |
-| Cobertura global de ramas            |                  46% |
-| Cobertura de `service.impl`          | 69% de instrucciones |
-| Cobertura de ramas en `service.impl` |                  69% |
-
-Cobertura de clases relevantes:
-
-| Clase                   | Cobertura de instrucciones |
-| ----------------------- | -------------------------: |
-| `ProductoServiceImpl`   |                       100% |
-| `InventarioServiceImpl` |                        74% |
-| `VentaServiceImpl`      |                        84% |
-| `UsuarioServiceImpl`    |                        72% |
-
-## Ejecución del proyecto
+## Ejecución de pruebas
 
 Ubícate en la raíz del proyecto y ejecuta:
 
@@ -168,15 +169,22 @@ Ubícate en la raíz del proyecto y ejecuta:
 mvn clean test
 ```
 
-En Windows también puedes usar Maven Wrapper:
+En Windows también puedes utilizar Maven Wrapper:
 
 ```powershell
 .\mvnw.cmd clean test
 ```
 
+La ejecución final validada entrega:
+
+```text
+Tests run: 33, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
 ## Reportes generados
 
-Después de ejecutar las pruebas, se generan los siguientes reportes:
+Después de ejecutar las pruebas se generan los siguientes reportes:
 
 ```text
 target/surefire-reports/
@@ -204,6 +212,9 @@ src/
 │   ├── java/
 │   │   └── com/minimarket/
 │   │       ├── controller/
+│   │       ├── dto/
+│   │       │   ├── ProductoRequestDTO.java
+│   │       │   └── ProductoResponseDTO.java
 │   │       ├── entity/
 │   │       ├── repository/
 │   │       ├── security/
@@ -221,15 +232,16 @@ src/
 
 ## Mejoras futuras
 
-* Incorporar más pruebas unitarias para los servicios con menor cobertura.
-* Agregar pruebas de integración con usuarios y roles persistidos en H2.
+* Incorporar DTOs para Inventario, Venta y Usuario.
+* Agregar validaciones específicas de precio, stock y campos obligatorios mediante Bean Validation.
+* Crear pruebas de integración con usuarios y roles persistidos en H2.
 * Incorporar auditoría de movimientos de inventario y ventas.
-* Configurar GitHub Actions para ejecutar `mvn clean test` automáticamente en cada push.
-* Evaluar la incorporación de JWT únicamente cuando exista una implementación completa para emitir, validar y controlar la expiración de tokens.
+* Configurar GitHub Actions para ejecutar `mvn clean test` automáticamente ante cada push o pull request.
+* Implementar JWT solo cuando exista una clase encargada de emitir, validar y controlar la expiración de tokens.
 
 ## Repositorio
 
-El código fuente, las pruebas y la documentación se encuentran publicados en el repositorio:
+El código fuente, las pruebas y la documentación se encuentran publicados en:
 
 ```text
 https://github.com/maximilianopalasezze/bimestre2backend
