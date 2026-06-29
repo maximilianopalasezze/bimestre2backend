@@ -3,12 +3,17 @@ package com.minimarket.security.config;
 import com.minimarket.security.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -20,31 +25,61 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                    DaoAuthenticationProvider authenticationProvider) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Deshabilita CSRF con la nueva sintaxis
+                .csrf(csrf -> csrf.disable())
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
+                .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**").permitAll() // Permitir acceso público
-                        .anyRequest().authenticated() // Requiere autenticación para el resto
+                        .requestMatchers("/public/**", "/h2-console/**", "/error").permitAll()
+
+                        // Productos: lectura para usuarios autenticados; modificaciones solo para ADMIN.
+                        .requestMatchers(HttpMethod.POST, "/api/productos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/productos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/productos/**").hasRole("ADMIN")
+                        .requestMatchers("/api/productos/**").hasAnyRole("ADMIN", "CAJERO", "CLIENTE")
+
+                        // Inventario: los movimientos pueden ser administrados únicamente por ADMIN.
+                        .requestMatchers(HttpMethod.POST, "/api/inventario/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/inventario/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/inventario/**").hasRole("ADMIN")
+                        .requestMatchers("/api/inventario/**").hasAnyRole("ADMIN", "CAJERO")
+
+                        // Ventas: solo CAJERO puede generar una venta; ADMIN y CAJERO pueden consultarlas.
+                        .requestMatchers(HttpMethod.POST, "/api/ventas/**").hasRole("CAJERO")
+                        .requestMatchers("/api/ventas/**").hasAnyRole("ADMIN", "CAJERO")
+
+                        // La administración de usuarios queda reservada para ADMIN.
+                        .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+                        .requestMatchers("/api/carrito/**").hasAnyRole("ADMIN", "CAJERO", "CLIENTE")
+                        .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
-                        .defaultSuccessUrl("/public/hola", true) // Redirigir después del login
-                )
+                .httpBasic(Customizer.withDefaults())
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/public/hola")
                         .permitAll()
                 );
+
         return http.build();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(customUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(DaoAuthenticationProvider authenticationProvider) {
+        return new ProviderManager(List.of(authenticationProvider));
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Configuración de encriptación de contraseñas
+        return new BCryptPasswordEncoder();
     }
 }

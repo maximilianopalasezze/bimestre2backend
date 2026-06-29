@@ -1,6 +1,8 @@
 package com.minimarket.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+
 import java.util.Set;
 
 @Entity
@@ -12,6 +14,7 @@ public class Usuario {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 
@@ -23,7 +26,6 @@ public class Usuario {
     )
     private Set<Rol> roles;
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

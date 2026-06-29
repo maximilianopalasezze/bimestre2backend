@@ -1,6 +1,8 @@
 package com.minimarket.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+
 import java.util.Set;
 
 @Entity
@@ -13,7 +15,12 @@ public class Rol {
     private String nombre;
 
     @ManyToMany(mappedBy = "roles")
+    @JsonIgnore
     private Set<Usuario> usuarios;
+
+    public Rol() {
+        // Constructor requerido por JPA.
+    }
 
     public Rol(String nombre) {
         this.nombre = nombre;
@@ -25,7 +32,6 @@ public class Rol {
         this.usuarios = usuarios;
     }
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

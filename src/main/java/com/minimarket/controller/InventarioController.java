@@ -2,7 +2,7 @@ package com.minimarket.controller;
 
 import com.minimarket.entity.Inventario;
 import com.minimarket.service.InventarioService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,8 +12,11 @@ import java.util.List;
 @RequestMapping("/api/inventario")
 public class InventarioController {
 
-    @Autowired
-    private InventarioService inventarioService;
+    private final InventarioService inventarioService;
+
+    public InventarioController(InventarioService inventarioService) {
+        this.inventarioService = inventarioService;
+    }
 
     @GetMapping
     public List<Inventario> listarMovimientosDeInventario() {
@@ -27,8 +30,8 @@ public class InventarioController {
     }
 
     @PostMapping
-    public Inventario registrarMovimiento(@RequestBody Inventario inventario) {
-        return inventarioService.save(inventario);
+    public ResponseEntity<Inventario> registrarMovimiento(@RequestBody Inventario inventario) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(inventarioService.save(inventario));
     }
 
     @PutMapping("/{id}")

@@ -6,6 +6,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CustomUserDetails implements UserDetails {
@@ -18,8 +20,13 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return usuario.getRoles().stream()
-                .map(rol -> new SimpleGrantedAuthority(rol.getNombre()))
+        return Optional.ofNullable(usuario.getRoles())
+                .orElse(Collections.emptySet())
+                .stream()
+                .map(rol -> rol.getNombre().startsWith("ROLE_")
+                        ? rol.getNombre()
+                        : "ROLE_" + rol.getNombre())
+                .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
 

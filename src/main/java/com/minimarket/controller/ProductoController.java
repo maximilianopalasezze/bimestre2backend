@@ -2,7 +2,7 @@ package com.minimarket.controller;
 
 import com.minimarket.entity.Producto;
 import com.minimarket.service.ProductoService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,8 +12,11 @@ import java.util.List;
 @RequestMapping("/api/productos")
 public class ProductoController {
 
-    @Autowired
-    private ProductoService productoService;
+    private final ProductoService productoService;
+
+    public ProductoController(ProductoService productoService) {
+        this.productoService = productoService;
+    }
 
     @GetMapping
     public List<Producto> listarProductos() {
@@ -27,8 +30,8 @@ public class ProductoController {
     }
 
     @PostMapping
-    public Producto guardarProducto(@RequestBody Producto producto) {
-        return productoService.save(producto);
+    public ResponseEntity<Producto> guardarProducto(@RequestBody Producto producto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(productoService.save(producto));
     }
 
     @PutMapping("/{id}")

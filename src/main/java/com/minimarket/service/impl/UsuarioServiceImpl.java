@@ -3,7 +3,7 @@ package com.minimarket.service.impl;
 import com.minimarket.entity.Usuario;
 import com.minimarket.repository.UsuarioRepository;
 import com.minimarket.service.UsuarioService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,8 +12,13 @@ import java.util.Optional;
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public UsuarioServiceImpl(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+        this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public List<Usuario> findAll() {
@@ -32,6 +37,14 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public Usuario save(Usuario usuario) {
+        if (usuario == null || usuario.getPassword() == null || usuario.getPassword().isBlank()) {
+            throw new IllegalArgumentException("La contraseña es obligatoria.");
+        }
+        if (!usuario.getPassword().startsWith("$2a$")
+                && !usuario.getPassword().startsWith("$2b$")
+                && !usuario.getPassword().startsWith("$2y$")) {
+            usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+        }
         return usuarioRepository.save(usuario);
     }
 
